@@ -46,8 +46,8 @@ Widget/component structure and chosen state management approach (e.g., setState,
 *9. Data Model*
 ERD or Firestore collection-document model diagram
 
-*10. Flowchart / Sequence Diagram*
-User interaction and navigation flow across the app
+*10. Flowchart*
+User interaction and navigation flow across the app : [https://docs.google.com/document/d/1DIBeZsPtKBVE5PGhh9yhJ1a4u8zCuhV1sFGlqiSyCFI/edit?usp=sharing](url)
 
 *11. References*
 - [Flutter Documentation](https://docs.flutter.dev/)
