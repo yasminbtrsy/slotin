@@ -50,4 +50,9 @@ ERD or Firestore collection-document model diagram
 User interaction and navigation flow across the app
 
 *11. References*
-
+- [Flutter Documentation](https://docs.flutter.dev/)
+- [Flutter State Management Options](https://docs.flutter.dev/data-and-backend/state-mgmt/options)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [pub.dev Package Repository](https://pub.dev/)
+- [Material Design 3 Documentation](https://m3.material.io/)
+- [GitHub Docs – Writing on GitHub](https://docs.github.com/en/get-started/writing-on-github)
