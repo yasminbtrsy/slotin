@@ -38,14 +38,14 @@ Dashboard/Analysis: view and manage all bookings (owner). view upcoming and past
 Court management:view court details and availability
 
 *7. UI Mock-up*
-Link to mock-up: (https://docs.google.com/document/d/1HXiz0GZGd5H0ZP20GWbnWU-Gl5YFX4U4TVz9BVBWpWY/edit?usp=sharing)
+Link to mock-up: [https://docs.google.com/document/d/1HXiz0GZGd5H0ZP20GWbnWU-Gl5YFX4U4TVz9BVBWpWY/edit?usp=sharing]
 
 *8. Architecture / Technical Design*
 Widget/component structure and chosen state management approach (e.g., setState, Provider, Riverpod, Bloc)
 
 *9. Data Model*
 ERD or Firestore collection-document model diagram
-Link to ERD: (https://docs.google.com/document/d/1hVnlIX8ZH28p3FWYKw-7esx7HNYBTqqDLS5HJtxDQAY/edit?usp=sharing)
+Link to ERD: [https://docs.google.com/document/d/1hVnlIX8ZH28p3FWYKw-7esx7HNYBTqqDLS5HJtxDQAY/edit?usp=sharing]
 
 *10. Flowchart*
 User interaction and navigation flow across the app : [https://docs.google.com/document/d/1DIBeZsPtKBVE5PGhh9yhJ1a4u8zCuhV1sFGlqiSyCFI/edit?usp=sharing](url)
