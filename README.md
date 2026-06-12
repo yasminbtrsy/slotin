@@ -38,8 +38,7 @@ Dashboard/Analysis: view and manage all bookings (owner). view upcoming and past
 Court management:view court details and availability
 
 *7. UI Mock-up*
-Link to mock-up (https://docs.google.com/document/d/1HXiz0GZGd5H0ZP20GWbnWU-Gl5YFX4U4TVz9BVBWpWY/edit?usp=sharing)
-
+Link to mock-up: (https://docs.google.com/document/d/1HXiz0GZGd5H0ZP20GWbnWU-Gl5YFX4U4TVz9BVBWpWY/edit?usp=sharing)
 
 *8. Architecture / Technical Design*
 Widget/component structure and chosen state management approach (e.g., setState, Provider, Riverpod, Bloc)
