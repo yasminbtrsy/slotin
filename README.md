@@ -3,7 +3,7 @@ SlotIn — Sport Court Booking System
 *1. Group Member*
 
           Name                                  Matric No.                    Role
-1. NAQASH MOHD AOUF                              2224251                 Auth & Profile
+1. NAQASH MOHD AOUF                              2224251                 Auth & Connect to firebase
 2. MUHAMMAD ZAHIN DANISH BIN ABDUL JALIL         2223145            Court Management (Admin)
 3. YASMIN BATRISYIA BINTI MAZLAN                 2221380             Booking & Scheduling
 4. SHARIFAH ZAHIDAH BINTI SYED ABDUL RAHMAN      2228908           Dashboard & Notifications
