@@ -9,7 +9,7 @@ SlotIn — Sport Court Booking System
 4. SHARIFAH ZAHIDAH BINTI SYED ABDUL RAHMAN      2228908           Dashboard & Notifications
 
 *2. Project Title*
-'SlotIn - sport Court Booking System'
+'SlotIn - Sport Court Booking System'
 
 *3. Introduction*
 - Problem statement
