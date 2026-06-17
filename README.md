@@ -25,7 +25,7 @@ SlotIn addresses a problem faced by sport enthusiasts by digitizing the booking 
 1. To develop a mobile application that allows users to browse and book sport courts in real time
 2. To enable admins to manage court listings, availability and incoming bookings efficiently
 3. To provide automated push notifications for booking confirmations and reminders
-4. Ti integrate Firebase services for secure authentication and real-time data storage
+4. To integrate Firebase services for secure authentication and real-time data storage
 
 *5. Target Users*
 Primary - General public, sport enthusiasts who want to check availability and make bookings conveniently via mobile
