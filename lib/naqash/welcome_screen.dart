@@ -3,6 +3,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'auth_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -20,7 +21,7 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               const Spacer(flex: 3),
 
-              //APP NAME
+              // APP LOGO
               Container(
                 width: 80,
                 height: 80,
@@ -37,8 +38,9 @@ class WelcomeScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
+              // TODO: change 'SmartQ' to 'SlotIn'
               const Text(
-                'SmartQ', // change app name
+                'SmartQ',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -48,7 +50,7 @@ class WelcomeScreen extends StatelessWidget {
 
               const SizedBox(height: 5),
 
-              // ---- TAGLINE ----     change the TAGLINE
+              // TODO: change tagline to SlotIn's tagline
               const Text(
                 'Tap for the Wash\nDone in a Flash',
                 textAlign: TextAlign.center,
@@ -61,79 +63,30 @@ class WelcomeScreen extends StatelessWidget {
 
               const Spacer(flex: 3),
 
-              // ---- LOGIN BUTTON ----
-              //change button color from navy(smartq color) to green for slotin
+              // GET STARTED BUTTON
+              // TODO: change button color from navy (0xFF1A3A6B) to SlotIn green (0xFF1A6B3C)
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A3A6B), // dark navy
+                    backgroundColor: const Color(0xFF1A3A6B), // wrong color
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () {
-                    // Navigate to Login screen
-                    Navigator.pushNamed(context, '/auth');
-                  },
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  ),
                   child: const Text(
-                    'Login',
+                    'Get Started',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // ---- SIGN UP LINK ----
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/auth');
-                },
-                child: RichText(
-                  text: const TextSpan(
-                    text: 'New here? ',
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
-                    children: [
-                      TextSpan(
-                        text: 'Sign up',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ---- ADMIN LOGIN LINK ----   change to admin in Auth Screen
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/auth'),
-                child: RichText(
-                  text: const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'admin ',
-                        style: TextStyle(color: Colors.black54, fontSize: 13),
-                      ),
-                      TextSpan(
-                        text: 'Login',
-                        style: TextStyle(
-                          color: Color(0xFFE74C3C),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 40),
             ],
           ),
