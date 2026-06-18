@@ -3,7 +3,6 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -77,12 +76,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   onPressed: () {
                     // Navigate to Login screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ), // change to auth screen
-                    );
+                    Navigator.pushNamed(context, '/auth');
                   },
                   child: const Text(
                     'Login',
@@ -96,10 +90,7 @@ class WelcomeScreen extends StatelessWidget {
               // ---- SIGN UP LINK ----
               GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  );
+                  Navigator.pushNamed(context, '/auth');
                 },
                 child: RichText(
                   text: const TextSpan(
@@ -123,10 +114,7 @@ class WelcomeScreen extends StatelessWidget {
 
               // ---- ADMIN LOGIN LINK ----   change to admin in Auth Screen
               GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminScreen()),
-                ),
+                onTap: () => Navigator.pushNamed(context, '/auth'),
                 child: RichText(
                   text: const TextSpan(
                     children: [
