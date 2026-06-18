@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
 
         // Yasmin - Booking
         '/home': (context) => const HomeScreen(),
-        '/book-slot': (context) => const BookSlotScreen(),
+        //'/book-slot': (context) => const BookSlotScreen(),
 
         // Sharifah - User
         '/user-dashboard': (context) => const UserDashboardScreen(),
