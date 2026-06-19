@@ -7,6 +7,7 @@ import 'naqash/auth_screen.dart';
 
 import 'zahin/admin_dashboard.dart';
 import 'zahin/court_management.dart';
+import 'zahin/all_bookings_screen.dart';
 
 import 'yasmin/home_screen.dart';
 //import 'yasmin/booking_screen.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         // Zahin - Admin
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
         '/manage-courts': (context) => const ManageCourtsScreen(),
+        '/all-bookings': (context) => const AllBookingsScreen(),
 
         // Yasmin - Booking
         '/home': (context) => const HomeScreen(),

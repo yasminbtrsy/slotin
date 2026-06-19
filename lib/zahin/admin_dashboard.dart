@@ -180,19 +180,15 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildQuickActions(BuildContext context) {
     const actions = [
       _QuickAction('Manage Courts', Icons.sports_tennis, Color(0xFF4CAF50), '/manage-courts'),
-      _QuickAction('All Bookings', Icons.event_note, Color(0xFF2196F3), '/book-slot'),
-      _QuickAction('Users', Icons.manage_accounts, Color(0xFF9C27B0), '/user-dashboard'),
-      _QuickAction('Reports', Icons.bar_chart, Color(0xFFFF9800), null),
+      _QuickAction('All Bookings', Icons.event_note, Color(0xFF2196F3), '/all-bookings'),
     ];
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 14,
-      mainAxisSpacing: 14,
-      childAspectRatio: 1.5,
-      children: actions.map((a) => _actionCard(context, a)).toList(),
+    return Row(
+      children: [
+        Expanded(child: _actionCard(context, actions[0])),
+        const SizedBox(width: 14),
+        Expanded(child: _actionCard(context, actions[1])),
+      ],
     );
   }
 

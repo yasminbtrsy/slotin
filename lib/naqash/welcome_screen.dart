@@ -169,7 +169,7 @@ class WelcomeScreen extends StatelessWidget {
                   // 🔐 ADMIN LOGIN
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/auth');
+                      Navigator.pushNamed(context, '/auth', arguments: 'admin');
                     },
                     child: Text(
                       "Admin Access",
