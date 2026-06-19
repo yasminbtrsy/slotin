@@ -1,9 +1,10 @@
 // ============================================================
-// lib/naqash/auth_screen.dart (FIXED + STABLE VERSION)
+// lib/naqash/auth_screen.dart (FULLY CONNECTED TO FIREBASE)
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Authentication Package
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -73,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen>
     super.dispose();
   }
 
-  // 🚀 AUTH LOGIC (SIMPLIFIED SAFE VERSION)
+  // 🚀 AUTH LOGIC (CONNECTED TO LIVE FIREBASE BACKEND)
   Future<void> _handleAuth() async {
     FocusScope.of(context).unfocus();
 
@@ -94,13 +95,48 @@ class _AuthScreenState extends State<AuthScreen>
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      if (_authMode == AuthMode.login) {
+        // 🔑 Firebase Login Action
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      } else if (_authMode == AuthMode.register) {
+        // 📝 Firebase Account Registration Action
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            );
 
-    if (!mounted) return;
+        // Optional: Updates user display name metadata inside Firebase Auth
+        if (_nameController.text.trim().isNotEmpty) {
+          await userCredential.user?.updateDisplayName(
+            _nameController.text.trim(),
+          );
+        }
+      }
 
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    Navigator.pushReplacementNamed(context, '/home');
+      // 🎉 Routing on Successful Auth State creation
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        // Parses clean friendly descriptive string reasons straight out from Firebase
+        _errorMessage = e.message ?? 'An authentication error occurred.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
+      });
+    }
   }
 
   void _toggleAuthMode() {
@@ -336,7 +372,7 @@ class _AuthScreenState extends State<AuthScreen>
                                     onPressed: _toggleAuthMode,
                                     child: Text(
                                       _authMode == AuthMode.login
-                                          ? 'Don\'t have an account? Register'
+                                          ? "Don't have an account? Register"
                                           : 'Already have an account? Login',
                                       style: const TextStyle(
                                         color: Colors.white70,
@@ -361,7 +397,7 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // 🔹 SIMPLE FIELD (STABLE VERSION)
+  // 🔹 TEXT INPUT COMPONENT
   Widget _buildTextInput({
     required TextEditingController controller,
     required String label,

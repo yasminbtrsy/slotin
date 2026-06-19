@@ -9,7 +9,7 @@ import 'zahin/admin_dashboard.dart';
 import 'zahin/court_management.dart';
 
 import 'yasmin/home_screen.dart';
-import 'yasmin/booking_screen.dart';
+//import 'yasmin/booking_screen.dart';
 
 import 'sharifah/mybooking_screen.dart';
 import 'sharifah/user_dashboard.dart';
@@ -52,7 +52,6 @@ class MyApp extends StatelessWidget {
 
         // Yasmin - Booking
         '/home': (context) => const HomeScreen(),
-        //'/book-slot': (context) => const BookSlotScreen(),
 
         // Sharifah - User
         '/user-dashboard': (context) => const UserDashboardScreen(),

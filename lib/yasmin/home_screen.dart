@@ -13,18 +13,30 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
+
   final List<String> _categories = ['All', 'Badminton', 'Futsal', 'Basketball'];
+
+  String get _greetingMessage {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning,';
+    } else if (hour < 17) {
+      return 'Good afternoon,';
+    } else {
+      return 'Good evening,';
+    }
+  }
 
   String get _userName {
     final user = FirebaseAuth.instance.currentUser;
     return user?.displayName ?? 'Player';
   }
 
-  List<QueryDocumentSnapshot> _filterCourts(
-    List<QueryDocumentSnapshot> courts,
+  List<QueryDocumentSnapshot> _filterOutlets(
+    List<QueryDocumentSnapshot> outlets,
   ) {
-    return courts.where((court) {
-      final data = court.data() as Map<String, dynamic>;
+    return outlets.where((outlet) {
+      final data = outlet.data() as Map<String, dynamic>;
       final name = (data['name'] ?? '').toString().toLowerCase();
       final type = (data['type'] ?? '').toString().toLowerCase();
 
@@ -61,9 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Good morning,',
-                            style: TextStyle(
+                          Text(
+                            _greetingMessage,
+                            style: const TextStyle(
                               fontSize: 13,
                               color: Colors.black54,
                             ),
@@ -99,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   TextField(
                     onChanged: (value) => setState(() => _searchQuery = value),
                     decoration: InputDecoration(
-                      hintText: 'Search courts...',
+                      hintText: 'Search outlets...',
                       hintStyle: const TextStyle(color: Colors.black26),
                       prefixIcon: const Icon(
                         Icons.search,
@@ -172,14 +184,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Available Courts',
+                    'Select Outlet',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
-                  // Live indicator
                   Row(
                     children: [
                       Container(
@@ -205,14 +216,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // ---- COURT LIST ----
+            // ---- OUTLET LIST ----
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
-                    .collection('courts')
+                    .collection('outlets')
                     .snapshots(),
                 builder: (context, snapshot) {
-                  // Loading
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(
@@ -221,30 +231,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  // Error
                   if (snapshot.hasError) {
                     return const Center(
                       child: Text('Something went wrong. Please try again.'),
                     );
                   }
 
-                  // Empty
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Center(
                       child: Text(
-                        'No courts available.',
+                        'No outlets available.',
                         style: TextStyle(color: Colors.black54),
                       ),
                     );
                   }
 
-                  final filtered = _filterCourts(snapshot.data!.docs);
+                  final filtered = _filterOutlets(snapshot.data!.docs);
 
-                  // No results after filter
                   if (filtered.isEmpty) {
                     return const Center(
                       child: Text(
-                        'No courts match your search.',
+                        'No outlets match your search.',
                         style: TextStyle(color: Colors.black54),
                       ),
                     );
@@ -259,21 +266,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, index) {
                       final data =
                           filtered[index].data() as Map<String, dynamic>;
-                      final courtId = filtered[index].id;
-                      final name = data['name'] ?? 'Unknown Court';
+                      final outletId = filtered[index].id;
+                      final name = data['name'] ?? 'Unknown Outlet';
                       final type = data['type'] ?? 'Court';
                       final location = data['location'] ?? 'Unknown Location';
-                      final price =
-                          double.tryParse(data['pricePerHour'].toString()) ??
-                          0.0;
                       final isAvailable = data['isAvailable'] ?? true;
 
-                      return _buildCourtCard(
-                        courtId: courtId,
+                      return _buildOutletCard(
+                        outletId: outletId,
                         name: name,
                         type: type,
                         location: location,
-                        price: price,
                         isAvailable: isAvailable,
                         context: context,
                       );
@@ -316,12 +319,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCourtCard({
-    required String courtId,
+  Widget _buildOutletCard({
+    required String outletId,
     required String name,
     required String type,
     required String location,
-    required double price,
     required bool isAvailable,
     required BuildContext context,
   }) {
@@ -341,13 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BookSlotScreen(
-            courtId: courtId,
-            courtName: name,
-            courtType: type,
+          builder: (_) => BookingScreen(
+            outletId: outletId,
+            outletName: name,
+            outletType: type,
             location: location,
-            pricePerHour: price,
-            isAvailable: isAvailable,
           ),
         ),
       ),
@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            // Court Icon
+            // Outlet Icon
             Container(
               width: 56,
               height: 56,
@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(width: 14),
 
-            // Court Info
+            // Outlet Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,24 +394,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '$type · $location',
-                    style: const TextStyle(fontSize: 12, color: Colors.black45),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 12,
+                        color: Colors.black45,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        location,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'RM ${price.toStringAsFixed(0)} / hour',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A6B3C),
-                    ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: Colors.black45,
+                      ),
+                      const SizedBox(width: 2),
+                      const Text(
+                        '8:00 AM - 11:00 PM',
+                        style: TextStyle(fontSize: 11, color: Colors.black45),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            // Availability indicator
+            // Availability dot
             Column(
               children: [
                 Container(
@@ -424,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isAvailable ? 'Open' : 'Full',
+                  isAvailable ? 'Open' : 'Closed',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
