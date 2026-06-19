@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+
   # UI & Styling
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
@@ -18,7 +19,7 @@ dependencies:
   firebase_core: ^3.8.0
   firebase_auth: ^5.3.4
   cloud_firestore: ^5.6.12
-  flutter_local_notifications: ^22.0.1
+  flutter_local_notifications: ^17.2.4
 
 dev_dependencies:
   flutter_test:
@@ -27,3 +28,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/avatars/

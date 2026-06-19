@@ -31,6 +31,9 @@ class _AuthScreenState extends State<AuthScreen>
   // 🔄 Mode
   AuthMode _authMode = AuthMode.login;
 
+  // 🔐 Set to true when navigated from Admin Access button
+  bool _isAdmin = false;
+
   // ⏳ Loading
   bool _isLoading = false;
 
@@ -41,6 +44,15 @@ class _AuthScreenState extends State<AuthScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args == 'admin' && !_isAdmin) {
+      setState(() => _isAdmin = true);
+    }
+  }
 
   @override
   void initState() {
@@ -121,8 +133,10 @@ class _AuthScreenState extends State<AuthScreen>
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // 🎉 Routing on Successful Auth State creation
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(
+        context,
+        _isAdmin ? '/admin-dashboard' : '/home',
+      );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -191,9 +205,11 @@ class _AuthScreenState extends State<AuthScreen>
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _authMode == AuthMode.login
-                                ? 'Welcome back'
-                                : 'Create your account',
+                            _isAdmin
+                                ? 'Admin Login'
+                                : _authMode == AuthMode.login
+                                    ? 'Welcome back'
+                                    : 'Create your account',
                             style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 32,
@@ -202,9 +218,11 @@ class _AuthScreenState extends State<AuthScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _authMode == AuthMode.login
-                                ? 'Sign in to continue to Slotin.'
-                                : 'Register with your details below.',
+                            _isAdmin
+                                ? 'Sign in with your admin credentials.'
+                                : _authMode == AuthMode.login
+                                    ? 'Sign in to continue to Slotin.'
+                                    : 'Register with your details below.',
                             style: GoogleFonts.poppins(
                               color: Colors.white70,
                               fontSize: 16,
@@ -367,18 +385,20 @@ class _AuthScreenState extends State<AuthScreen>
                                             ),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  TextButton(
-                                    onPressed: _toggleAuthMode,
-                                    child: Text(
-                                      _authMode == AuthMode.login
-                                          ? "Don't have an account? Register"
-                                          : 'Already have an account? Login',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
+                                  if (!_isAdmin) ...[
+                                    const SizedBox(height: 10),
+                                    TextButton(
+                                      onPressed: _toggleAuthMode,
+                                      child: Text(
+                                        _authMode == AuthMode.login
+                                            ? "Don't have an account? Register"
+                                            : 'Already have an account? Login',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
