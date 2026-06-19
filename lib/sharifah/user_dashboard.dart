@@ -25,93 +25,142 @@ class UserDashboardScreen extends StatelessWidget {
             final bookings = snapshot.data?.docs ?? [];
 
             final total = bookings.length;
+
             final upcoming = bookings.where((doc) {
               final data = doc.data() as Map<String, dynamic>;
-              return data['status'] == 'Confirmed' || data['status'] == 'Pending';
+              final status = (data['status'] ?? '').toString().toLowerCase();
+              return status == 'confirmed' || status == 'pending';
             }).length;
 
             final completed = bookings.where((doc) {
               final data = doc.data() as Map<String, dynamic>;
-              return data['status'] == 'Completed';
+              final status = (data['status'] ?? '').toString().toLowerCase();
+              return status == 'completed';
             }).length;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'User Dashboard',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'My Profile',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                _dashboardCard(
-                  title: 'Total Bookings',
-                  value: total.toString(),
-                  icon: Icons.calendar_month,
-                ),
-
-                _dashboardCard(
-                  title: 'Upcoming Bookings',
-                  value: upcoming.toString(),
-                  icon: Icons.event_available,
-                ),
-
-                _dashboardCard(
-                  title: 'Completed Bookings',
-                  value: completed.toString(),
-                  icon: Icons.check_circle_outline,
-                ),
-
-                const SizedBox(height: 20),
-
-                const Text(
-                  'Recent Bookings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Expanded(
-                  child: bookings.isEmpty
-                      ? const Center(child: Text('No booking activity yet'))
-                      : ListView.builder(
-                          itemCount: bookings.length,
-                          itemBuilder: (context, index) {
-                            final data = bookings[index].data()
-                                as Map<String, dynamic>;
-
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const CircleAvatar(
-                                backgroundColor: Color(0xFFE2F6EF),
-                                child: Icon(
-                                  Icons.sports_tennis,
-                                  color: Color(0xFF1A6B3C),
-                                ),
-                              ),
-                              title: Text(data['courtName'] ?? 'Court booking'),
-                              subtitle: Text(
-                                '${data['bookingDate'] ?? ''} • ${data['startTime'] ?? ''}',
-                              ),
-                              trailing: Text(
-                                data['status'] ?? 'Pending',
-                                style: const TextStyle(
-                                  color: Color(0xFF1A6B3C),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          },
+                  // USER PROFILE INFO
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
-                ),
-              ],
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const CircleAvatar(
+                          radius: 42,
+                          backgroundColor: Color(0xFFE2F6EF),
+                          child: Icon(
+                            Icons.person,
+                            size: 42,
+                            color: Color(0xFF1A6B3C),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Text(
+                          user?.displayName ?? 'Player',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          user?.email ?? 'No email available',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  const Text(
+                    'Booking Summary',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _profileCard(
+                    title: 'Total Bookings',
+                    value: total.toString(),
+                    icon: Icons.calendar_month,
+                  ),
+
+                  _profileCard(
+                    title: 'Upcoming Bookings',
+                    value: upcoming.toString(),
+                    icon: Icons.event_available,
+                  ),
+
+                  _profileCard(
+                    title: 'Completed Bookings',
+                    value: completed.toString(),
+                    icon: Icons.check_circle_outline,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // LOGOUT BUTTON
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+
+                        if (context.mounted) {
+                          Navigator.pushReplacementNamed(context, '/auth');
+                        }
+                      },
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Logout'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A6B3C),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -119,7 +168,7 @@ class UserDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _dashboardCard({
+  Widget _profileCard({
     required String title,
     required String value,
     required IconData icon,
@@ -129,7 +178,7 @@ class UserDashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -142,7 +191,10 @@ class UserDashboardScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             backgroundColor: const Color(0xFFE2F6EF),
-            child: Icon(icon, color: const Color(0xFF1A6B3C)),
+            child: Icon(
+              icon,
+              color: const Color(0xFF1A6B3C),
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(

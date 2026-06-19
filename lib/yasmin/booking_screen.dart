@@ -81,12 +81,13 @@ class _BookingScreenState extends State<BookingScreen> {
       iOS: DarwinNotificationDetails(),
     );
 
-    await flutterLocalNotificationsPlugin.show(
+     await flutterLocalNotificationsPlugin.show(
       0, // Notification ID
       'Booking Confirmed! 🎉', // Title
       'Your booking at $outletName is from $startTime till $endTime. See you there!', // Body
       platformChannelSpecifics,
     );
+  
   }
 
   String _formatDate(DateTime date) {
