@@ -131,12 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.black87,
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF1A6B3C),
+                  child: Text(
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'P',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  onPressed: () {},
                 ),
               ],
             ),

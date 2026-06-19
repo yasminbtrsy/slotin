@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:slotin/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -57,6 +59,35 @@ class _BookingScreenState extends State<BookingScreen> {
     '9:00 PM',
     '10:00 PM',
   ];
+
+  // ---- NATIVE POP-UP NOTIFICATION BANNER ----
+  Future<void> _showLocalNotification({
+    required String outletName,
+    required String startTime,
+    required String endTime,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'booking_channel_id', // Channel ID
+          'Booking Notifications', // Channel Name
+          channelDescription: 'Notifications for successful slot bookings',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    await flutterLocalNotificationsPlugin.show(
+      0, // Notification ID
+      'Booking Confirmed! 🎉', // Title
+      'Your booking at $outletName is from $startTime till $endTime. See you there!', // Body
+      platformChannelSpecifics,
+    );
+  }
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}-'
@@ -121,6 +152,12 @@ class _BookingScreenState extends State<BookingScreen> {
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await _showLocalNotification(
+        outletName: widget.outletName,
+        startTime: _selectedTimeSlot ?? '',
+        endTime: _getEndTime(),
+      );
 
       if (mounted) _showSuccess(totalPrice);
     } catch (e) {
