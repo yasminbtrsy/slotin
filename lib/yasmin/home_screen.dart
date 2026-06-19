@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'booking_screen.dart';
+import 'package:slotin/sharifah/mybooking_screen.dart';
+import 'package:slotin/sharifah/user_dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,11 +13,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0; // Tracks the current active tab index
+
+  // Shared state variables required by the Home Tab content
   String _selectedCategory = 'All';
   String _searchQuery = '';
-
   final List<String> _categories = ['All', 'Badminton', 'Futsal', 'Basketball'];
 
+  // Dynamic greeting generator based on current system time
   String get _greetingMessage {
     final hour = DateTime.now().hour;
     if (hour < 12) {
@@ -32,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return user?.displayName ?? 'Player';
   }
 
+  // Filter query logic remains accessible to the home tab
   List<QueryDocumentSnapshot> _filterOutlets(
     List<QueryDocumentSnapshot> outlets,
   ) {
@@ -53,256 +59,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // List of screens targeted by the Bottom Navigation Bar
+    final List<Widget> _pages = [
+      _buildHomeTabContent(), // Index 0: Main Dashboard/Outlets List
+      const MyBookingsScreen(), // Index 1: Bookings Management View
+      const UserDashboardScreen(), // Index 2: Personal Profile/Analytics Panel
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ---- HEADER ----
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Greeting + Avatar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _greetingMessage,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          Text(
-                            _userName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A6B3C),
-                            ),
-                          ),
-                        ],
-                      ),
-                      CircleAvatar(
-                        backgroundColor: const Color(0xFF1A6B3C),
-                        child: Text(
-                          _userName.isNotEmpty
-                              ? _userName[0].toUpperCase()
-                              : 'P',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Search Bar
-                  TextField(
-                    onChanged: (value) => setState(() => _searchQuery = value),
-                    decoration: InputDecoration(
-                      hintText: 'Search outlets...',
-                      hintStyle: const TextStyle(color: Colors.black26),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: Colors.black38,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Category Filter
-                  SizedBox(
-                    height: 36,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categories[index];
-                        final isActive = _selectedCategory == cat;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = cat),
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? const Color(0xFF1A6B3C)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isActive
-                                    ? const Color(0xFF1A6B3C)
-                                    : Colors.black12,
-                              ),
-                            ),
-                            child: Text(
-                              cat,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: isActive ? Colors.white : Colors.black54,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ---- SECTION TITLE ----
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Select Outlet',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Live',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // ---- OUTLET LIST ----
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('outlets')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF1A6B3C),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return const Center(
-                      child: Text('Something went wrong. Please try again.'),
-                    );
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No outlets available.',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    );
-                  }
-
-                  final filtered = _filterOutlets(snapshot.data!.docs);
-
-                  if (filtered.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No outlets match your search.',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final data =
-                          filtered[index].data() as Map<String, dynamic>;
-                      final outletId = filtered[index].id;
-                      final name = data['name'] ?? 'Unknown Outlet';
-                      final type = data['type'] ?? 'Court';
-                      final location = data['location'] ?? 'Unknown Location';
-                      final isAvailable = data['isAvailable'] ?? true;
-
-                      return _buildOutletCard(
-                        outletId: outletId,
-                        name: name,
-                        type: type,
-                        location: location,
-                        isAvailable: isAvailable,
-                        context: context,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // ---- BOTTOM NAV ----
+      // IndexedStack preserves screen scroll states and keeps the nav bar from blinking out
+      body: IndexedStack(index: _currentIndex, children: _pages),
+      // ---- BOTTOM NAVIGATION BAR ----
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
+        currentIndex: _currentIndex,
         selectedItemColor: const Color(0xFF1A6B3C),
         unselectedItemColor: Colors.black38,
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          if (index == 1) {
-            Navigator.pushNamed(context, '/my-bookings');
-          }
-          if (index == 2) {
-            Navigator.pushNamed(context, '/user-dashboard');
-          }
+          setState(() {
+            _currentIndex = index; // Changes view tabs smoothly
+          });
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -319,68 +97,252 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildOutletCard({
-    required String outletId,
-    required String name,
-    required String type,
-    required String location,
-    required bool isAvailable,
-    required BuildContext context,
-  }) {
-    IconData courtIcon;
-    switch (type.toLowerCase()) {
-      case 'futsal':
-        courtIcon = Icons.sports_soccer;
-        break;
-      case 'basketball':
-        courtIcon = Icons.sports_basketball;
-        break;
-      default:
-        courtIcon = Icons.sports_tennis;
-    }
+  // =========================================================================
+  // VIEW CONTEXT: MAIN HOME CONTENT TAB (Index 0)
+  // =========================================================================
+  Widget _buildHomeTabContent() {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ---- HEADER SECTION ----
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _greetingMessage, // Dynamic greeting linked up seamlessly
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    Text(
+                      _userName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: Colors.black87,
+                  ),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+
+          // ---- SEARCH BAR ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  hintText: 'Search arenas or clubs...',
+                  hintStyle: TextStyle(color: Colors.black38, fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: Colors.black45),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ),
+
+          // ---- CATEGORIES FILTER H-LIST ----
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: SizedBox(
+              height: 38,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                padding: const EdgeInsets.only(left: 20),
+                itemBuilder: (context, index) {
+                  final category = _categories[index];
+                  final isSelected = _selectedCategory == category;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = category;
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFF1A6B3C)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF1A6B3C)
+                              : Colors.black12,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected ? Colors.white : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // ---- VENUES LIST BANNER HEADER ----
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
+            child: Text(
+              'Available Venues',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+
+          // ---- FIRESTORE OUTLETS STREAM ----
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('outlets')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF1A6B3C)),
+                  );
+                }
+
+                final allOutlets = snapshot.data?.docs ?? [];
+                final filteredOutlets = _filterOutlets(allOutlets);
+
+                if (filteredOutlets.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No venues found matching criteria.',
+                      style: TextStyle(color: Colors.black45),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: filteredOutlets.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemBuilder: (context, index) {
+                    return _buildOutletCard(filteredOutlets[index]);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // CARD WIDGET BUILDER FOR INDIVIDUAL OUTLETS
+  // =========================================================================
+  Widget _buildOutletCard(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final String name = data['name'] ?? 'Unnamed Venue';
+    final String type = data['type'] ?? 'Sport';
+    final String location = data['location'] ?? 'Unknown Location';
+    final bool isAvailable = data['isAvailable'] ?? true;
+    final String outletId = doc.id;
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BookingScreen(
-            outletId: outletId,
-            outletName: name,
-            outletType: type,
-            location: location,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookingScreen(
+              outletId: outletId,
+              outletName: name,
+              outletType: type,
+              location: location,
+            ),
           ),
-        ),
-      ),
+        );
+      },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Outlet Icon
+            // Venue Type/Icon Placeholder box
             Container(
               width: 56,
               height: 56,
               decoration: BoxDecoration(
                 color: const Color(0xFF1A6B3C).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(courtIcon, color: const Color(0xFF1A6B3C), size: 28),
+              child: Icon(
+                type.toLowerCase() == 'badminton'
+                    ? Icons.sports_tennis
+                    : type.toLowerCase() == 'futsal'
+                    ? Icons.sports_soccer
+                    : Icons.sports_basketball,
+                color: const Color(0xFF1A6B3C),
+                size: 26,
+              ),
             ),
+            const SizedBox(width: 12),
 
-            const SizedBox(width: 14),
-
-            // Outlet Info
+            // Venue Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,12 +350,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Row(
                     children: [
                       const Icon(
@@ -402,16 +366,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.black45,
                       ),
                       const SizedBox(width: 2),
-                      Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black45,
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.black45,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
+
+                  // ---- HARDCODED OPERATING HOURS ROW FIXED ----
                   Row(
                     children: [
                       const Icon(
@@ -419,23 +389,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 12,
                         color: Colors.black45,
                       ),
-                      const SizedBox(width: 2),
-                      const Text(
+                      const SizedBox(width: 4),
+                      Text(
                         '8:00 AM - 11:00 PM',
-                        style: TextStyle(fontSize: 11, color: Colors.black45),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
 
-            // Availability dot
+            // Availability Status Dot indicator
             Column(
               children: [
                 Container(
-                  width: 12,
-                  height: 12,
+                  width: 10,
+                  height: 10,
                   decoration: BoxDecoration(
                     color: isAvailable ? Colors.green : Colors.red,
                     shape: BoxShape.circle,
