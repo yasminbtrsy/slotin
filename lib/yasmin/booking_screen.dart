@@ -56,7 +56,6 @@ class _BookingScreenState extends State<BookingScreen> {
     '8:00 PM',
     '9:00 PM',
     '10:00 PM',
-    '11:00 PM',
   ];
 
   String _formatDate(DateTime date) {
@@ -76,7 +75,6 @@ class _BookingScreenState extends State<BookingScreen> {
   // ---- FETCH BOOKED COURTS FOR SELECTED DATE + TIME ----
   Future<void> _fetchBookedCourts() async {
     setState(() => _isFetchingCourts = true);
-
     final snapshot = await FirebaseFirestore.instance
         .collection('bookings')
         .where('outletId', isEqualTo: widget.outletId)
@@ -100,7 +98,6 @@ class _BookingScreenState extends State<BookingScreen> {
   // ---- CONFIRM BOOKING ----
   Future<void> _confirmBooking() async {
     setState(() => _isLoading = true);
-
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -109,7 +106,6 @@ class _BookingScreenState extends State<BookingScreen> {
       }
 
       final double totalPrice = _selectedCourtPrice * _selectedDuration;
-
       await FirebaseFirestore.instance.collection('bookings').add({
         'userId': user.uid,
         'userName': user.displayName ?? 'User',
@@ -371,12 +367,11 @@ class _BookingScreenState extends State<BookingScreen> {
           _buildSectionTitle('Start Time'),
           LayoutBuilder(
             builder: (context, constraints) {
-              // Calculate the exact width for 3 items per row, accounting for spacing
               final double itemWidth = (constraints.maxWidth - 16) / 3;
 
               return Wrap(
-                spacing: 8, // Horizontal space between boxes
-                runSpacing: 8, // Vertical space between rows
+                spacing: 8,
+                runSpacing: 8,
                 children: _timeSlots.map((slot) {
                   final isSelected = _selectedTimeSlot == slot;
 
@@ -391,26 +386,68 @@ class _BookingScreenState extends State<BookingScreen> {
                     final timeParts = parts[0].split(':');
                     int slotHour = int.parse(timeParts[0]);
                     final isPm = parts[1] == 'PM';
-
                     if (isPm && slotHour != 12) slotHour += 12;
                     if (!isPm && slotHour == 12) slotHour = 0;
-
                     if (slotHour <= now.hour) {
                       isPast = true;
                     }
                   }
 
-                  // If it's in the past, return a zero-size widget.
-                  // Wrap collapses its height automatically!
                   if (isPast) {
                     return const SizedBox.shrink();
                   }
 
+                  // FIXED: Properly balanced layout structure brackets below
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedTimeSlot = slot),
+                    onTap: () {
+                      setState(() => _selectedTimeSlot = slot);
+
+                      // 2. 🚨 CHECK FOR LATE NIGHT BOOKING (10:00 PM)
+                      if (slot == '10:00 PM') {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              title: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Color(0xFF1A6B3C),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Friendly Reminder'),
+                                ],
+                              ),
+                              content: const Text(
+                                'The sports center closes at 11:00 PM. Please manage your time properly, as you will only have 1 hour to play!',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text(
+                                    'Okay, Got It',
+                                    style: TextStyle(
+                                      color: Color(0xFF1A6B3C),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    },
                     child: Container(
                       width: itemWidth,
-                      height: 42, // Keeps the clean, compact asset ratio
+                      height: 42,
                       decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFF1A6B3C)
@@ -566,7 +603,6 @@ class _BookingScreenState extends State<BookingScreen> {
                     }
 
                     final courts = snapshot.data!.docs;
-
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -683,7 +719,6 @@ class _BookingScreenState extends State<BookingScreen> {
   // ========================================================
   Widget _buildStep3() {
     final double totalPrice = _selectedCourtPrice * _selectedDuration;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
