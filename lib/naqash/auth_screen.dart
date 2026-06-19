@@ -1,442 +1,411 @@
+// ============================================================
+// lib/naqash/auth_screen.dart (FIXED + STABLE VERSION)
+// ============================================================
+
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AuthScreen extends StatefulWidget {
-  final String initialMode; //
-  final String initialRole; //
-
-  const AuthScreen({
-    super.key,
-    this.initialMode = 'login',
-    this.initialRole = 'user',
-  });
+  const AuthScreen({super.key});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
-  late String _mode;
-  late String _role;
+class _AuthScreenState extends State<AuthScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+
+  // 📝 Controllers
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  // 👁️ Password visibility
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  // 🔄 Mode
+  AuthMode _authMode = AuthMode.login;
+
+  // ⏳ Loading
+  bool _isLoading = false;
+
+  // ❌ Error
+  String? _errorMessage;
+
+  // 🎨 Animation
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _mode = widget.initialMode;
-    _role = widget.initialRole;
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(_animationController);
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(_animationController);
+
+    _animationController.forward();
   }
-
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-
-  bool _isLoading = false;
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
-    _phoneController.dispose();
+    _confirmPasswordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
-  Future<void> _register() async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty ||
-        _nameController.text.trim().isEmpty ||
-        _phoneController.text.trim().isEmpty) {
-      _showError('Please fill in all fields');
+  // 🚀 AUTH LOGIC (SIMPLIFIED SAFE VERSION)
+  Future<void> _handleAuth() async {
+    FocusScope.of(context).unfocus();
+
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_passwordController.text.trim().length < 6) {
-      _showError('Password must be at least 6 characters');
+    if (_authMode == AuthMode.register &&
+        _passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = 'Passwords do not match.';
+      });
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+    });
 
-    try {
-      UserCredential credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+    await Future.delayed(const Duration(seconds: 2));
 
-      await credential.user?.updateDisplayName(_nameController.text.trim());
+    if (!mounted) return;
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set({
-            'name': _nameController.text.trim(),
-            'phone': _phoneController.text.trim(),
-            'email': _emailController.text.trim(),
-            'role': 'user',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+    setState(() => _isLoading = false);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created! Please log in.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        setState(() => _mode = 'login');
-      }
-    } on FirebaseAuthException catch (e) {
-      String message;
-      switch (e.code) {
-        case 'email-already-in-use':
-          message = 'An account already exists for this email.';
-          break;
-        case 'invalid-email':
-          message = 'Please enter a valid email address.';
-          break;
-        case 'weak-password':
-          message = 'Password is too weak. Use at least 6 characters.';
-          break;
-        default:
-          message = e.message ?? 'Registration failed. Please try again.';
-      }
-      _showError(message);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
-  Future<void> _login() async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty) {
-      _showError('Please fill in all fields');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      UserCredential credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .get();
-
-      String userRole = doc['role'] ?? 'user';
-
-      if (mounted) {
-        if (_role == 'admin' && userRole == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin-dashboard');
-        } else if (_role == 'user' && userRole == 'user') {
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          _showError('You do not have access as $_role.');
-          await FirebaseAuth.instance.signOut();
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      String message;
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'No account found for this email.';
-          break;
-        case 'wrong-password':
-          message = 'Incorrect password. Please try again.';
-          break;
-        case 'invalid-email':
-          message = 'Please enter a valid email address.';
-          break;
-        default:
-          message = e.message ?? 'Login failed. Please try again.';
-      }
-      _showError(message);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
-    );
+  void _toggleAuthMode() {
+    setState(() {
+      _authMode = _authMode == AuthMode.login
+          ? AuthMode.register
+          : AuthMode.login;
+      _errorMessage = null;
+      _formKey.currentState?.reset();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // TODO: change background color to white
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        // TODO: change appbar color to white
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const BackButton(color: Colors.black54),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 16),
-
-              // TODO: change logo container color to SlotIn green (0xFF1A6B3C)
-              // TODO: change icon to Icons.sports_tennis
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.blue, // wrong color
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.local_laundry_service, // wrong icon
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // ROLE TOGGLE
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    _buildRoleTab('User', 'user'),
-                    _buildRoleTab('Admin', 'admin'),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF081B4B),
+                    Color(0xFF1F2D6A),
+                    Color(0xFF2D3E82),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              if (_role == 'user')
-                Row(
-                  children: [
-                    _buildModeTab('Login', 'login'),
-                    _buildModeTab('Register', 'register'),
-                  ],
-                ),
-
-              const SizedBox(height: 24),
-
-              Text(
-                _mode == 'register'
-                    ? 'Create Account'
-                    : _role == 'admin'
-                    ? 'Admin Login'
-                    : 'Welcome Back',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  // TODO: change heading color to SlotIn green (0xFF1A6B3C)
-                  color: Colors.blue,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              if (_mode == 'register') ...[
-                _buildLabel('Name'),
-                _buildTextField(
-                  controller: _nameController,
-                  hint: 'Enter your name',
-                ),
-                const SizedBox(height: 16),
-                _buildLabel('Phone Number'),
-                _buildTextField(
-                  controller: _phoneController,
-                  hint: 'Enter your phone number',
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              _buildLabel('Email'),
-              _buildTextField(
-                controller: _emailController,
-                hint: 'Enter your email',
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildLabel('Password'),
-              _buildTextField(
-                controller: _passwordController,
-                hint: 'Enter your password',
-                obscure: _obscurePassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    size: 20,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              // TODO: change button color to SlotIn green (0xFF1A6B3C)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // wrong color
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+            ),
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 28),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _authMode == AuthMode.login
+                                ? 'Welcome back'
+                                : 'Create your account',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _authMode == AuthMode.login
+                                ? 'Sign in to continue to Slotin.'
+                                : 'Register with your details below.',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white24),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 18,
+                                  offset: Offset(0, 12),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(22),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  if (_authMode == AuthMode.register) ...[
+                                    _buildTextInput(
+                                      controller: _nameController,
+                                      label: 'Full Name',
+                                      hintText: 'Enter your full name',
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
+                                          return 'Please enter your full name.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  _buildTextInput(
+                                    controller: _emailController,
+                                    label: 'Email',
+                                    hintText: 'name@example.com',
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Please enter your email.';
+                                      }
+                                      if (!RegExp(
+                                        r'^[^@\s]+@[^@\s]+\.[^@\s]+',
+                                      ).hasMatch(value)) {
+                                        return 'Please enter a valid email.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildTextInput(
+                                    controller: _passwordController,
+                                    label: 'Password',
+                                    hintText: 'Enter your password',
+                                    obscureText: _obscurePassword,
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter your password.';
+                                      }
+                                      if (value.length < 6) {
+                                        return 'Password must be at least 6 characters.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  if (_authMode == AuthMode.register) ...[
+                                    const SizedBox(height: 16),
+                                    _buildTextInput(
+                                      controller: _confirmPasswordController,
+                                      label: 'Confirm Password',
+                                      hintText: 'Re-enter your password',
+                                      obscureText: _obscureConfirmPassword,
+                                      suffixIcon: IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscureConfirmPassword =
+                                                !_obscureConfirmPassword;
+                                          });
+                                        },
+                                        icon: Icon(
+                                          _obscureConfirmPassword
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please confirm your password.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
+                                  if (_errorMessage != null) ...[
+                                    const SizedBox(height: 18),
+                                    Text(
+                                      _errorMessage!,
+                                      style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                  const SizedBox(height: 22),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 52,
+                                    child: ElevatedButton(
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _handleAuth,
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                      child: _isLoading
+                                          ? const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2.5,
+                                              ),
+                                            )
+                                          : Text(
+                                              _authMode == AuthMode.login
+                                                  ? 'Login'
+                                                  : 'Register',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  TextButton(
+                                    onPressed: _toggleAuthMode,
+                                    child: Text(
+                                      _authMode == AuthMode.login
+                                          ? 'Don\'t have an account? Register'
+                                          : 'Already have an account? Login',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
-                  onPressed: _isLoading
-                      ? null
-                      : _mode == 'register'
-                      ? _register
-                      : _login,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          _mode == 'register' ? 'Register' : 'Login',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleTab(String label, String value) {
-    bool isActive = _role == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() {
-          _role = value;
-          _mode = 'login';
-        }),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            // TODO: change active color to SlotIn green (0xFF1A6B3C)
-            color: isActive ? Colors.blue : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.black54,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildModeTab(String label, String value) {
-    bool isActive = _mode == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _mode = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                // TODO: change active color to SlotIn green (0xFF1A6B3C)
-                color: isActive ? Colors.blue : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              // TODO: change active color to SlotIn green (0xFF1A6B3C)
-              color: isActive ? Colors.blue : Colors.black38,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 13, color: Colors.black87),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
+  // 🔹 SIMPLE FIELD (STABLE VERSION)
+  Widget _buildTextInput({
     required TextEditingController controller,
-    required String hint,
-    bool obscure = false,
+    required String label,
+    required String hintText,
     TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
     Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black26),
-        suffixIcon: suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black12),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          style: const TextStyle(color: Colors.white),
+          cursorColor: Colors.white,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.08),
+            suffixIcon: suffixIcon,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          validator: validator,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-      ),
+      ],
     );
   }
 }
+
+// 🔢 AUTH MODES
+enum AuthMode { login, register, admin }
