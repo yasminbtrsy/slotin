@@ -6,7 +6,10 @@ class MyBookingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Bookings')),
+      appBar: AppBar(
+        title: const Text('My Bookings'),
+        automaticallyImplyLeading: false,
+      ),
       body: const Center(child: Text('My Bookings - Coming soon')),
     );
   }
